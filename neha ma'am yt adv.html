@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>YouTube Playlist Viewer</title>
+<style>
+  /* Dark theme with neomorphism */
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #1e1e1e;
+    color: #fff;
+    margin: 0;
+    padding: 0;
+  }
+  .container {
+    width: 100%;
+    padding: 20px 0; /* Adjust padding to center content */
+    background: #1e1e1e;
+    overflow: hidden; /* Clear float */
+    border-radius: 20px;
+    box-shadow: 8px 8px 16px #0d0d0d, -8px -8px 16px #272727;
+  }
+  .heading {
+    text-align: center;
+    font-size: 24px;
+    margin-bottom: 20px;
+  }
+  .video-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Three columns layout */
+    grid-gap: 20px;
+    padding: 0 20px; /* Add padding to avoid touching edges */
+    box-sizing: border-box; /* Include padding in width calculation */
+  }
+  .video-card {
+    padding: 10px;
+    border-radius: 10px;
+    background-color: #333;
+    box-shadow: 4px 4px 8px #0d0d0d, -4px -4px 8px #454545;
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+  }
+  .video-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 6px 6px 12px #0d0d0d, -6px -6px 12px #454545;
+  }
+  .video-thumbnail {
+    width: 100%;
+    height: auto;
+    border-radius: 10px;
+  }
+  .video-title {
+    margin-top: 10px;
+    font-size: 14px;
+    color: #fff;
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .video-button {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    background-color: #007bff;
+    color: #fff;
+    text-align: center;
+    text-decoration: none;
+    border: none;
+    border-radius: 10px;
+    transition: background-color 0.3s ease-in-out;
+    cursor: pointer;
+    font-size: 16px;
+    margin-top: 10px;
+  }
+  .video-button:hover {
+    background-color: #0056b3;
+  }
+  .green-button {
+    background-color: #28a745;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <h1 class="heading">JEE Advanced 1.0 Lectures by Neha Ma'am</h1>
+  <div id="playlist-container" class="video-grid">
+    <!-- Videos will be dynamically added here -->
+  </div>
+</div>
+
+<script>
+// Your YouTube Data API key
+const apiKey = 'AIzaSyA5BSne7jGW7r_rs7qgEKHpoIxzSkBH6gY';
+
+// ID of the YouTube playlist
+const playlistId = 'PLfFN2FAF1vl-C25_9c7nV9zbXOdhwAGdT';
+
+// Function to fetch playlist items with pagination
+function fetchPlaylistItems(pageToken) {
+    let url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&key=${apiKey}`;
+    if (pageToken) {
+        url += `&pageToken=${pageToken}`;
+    }
+
+    return fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            const videos = data.items;
+            const playlistContainer = document.getElementById('playlist-container');
+
+            // Loop through each video and create HTML elements
+            videos.forEach(video => {
+                const videoId = video.snippet.resourceId.videoId;
+                const videoThumbnail = video.snippet.thumbnails.medium.url;
+                const videoTitle = video.snippet.title;
+                const videoDescription = video.snippet.description;
+
+                // Check if the video description contains a link to Google Drive
+                const driveLinkRegex = /https:\/\/drive\.google\.com\/\S*/;
+                const driveLinkMatch = videoDescription.match(driveLinkRegex);
+                const driveLink = driveLinkMatch ? driveLinkMatch[0] : '';
+
+                // Create a video card
+                const videoCard = document.createElement('div');
+                videoCard.classList.add('video-card');
+                videoCard.innerHTML = `
+                  <div class="video-thumbnail">
+                    <img src="${videoThumbnail}" alt="">
+                  </div>
+                  <button class="video-button" onclick="window.open('https://www.youtube.com/watch?v=${videoId}', '_blank')">
+                    Watch Video
+                  </button>
+                  <button class="video-button green-button" onclick="window.open('${driveLink}', '_blank')">
+                    PDF of the session
+                  </button>
+                `;
+
+                // Append the video card to the playlist container
+                playlistContainer.appendChild(videoCard);
+            });
+
+            // Check if there are more pages and fetch them recursively
+            if (data.nextPageToken) {
+                fetchPlaylistItems(data.nextPageToken);
+            }
+        })
+        .catch(error => console.error('Error fetching playlist data:', error));
+}
+
+// Initial call to fetch playlist items
+fetchPlaylistItems(null);
+</script>
+
+</body>
+</html>
